@@ -32,9 +32,9 @@ Claude Code always:
 
 1. **Works on a feature branch** — never commits directly to `main`.
    - Branch naming: `claude/<short-description>` (e.g. `claude/add-auth-flow`)
-2. **Commits and pushes** the feature branch when the task is complete.
-3. **Returns a preview URL** from Vercel after the preview workflow runs so the user can review changes before merging.
-4. **Merges to `main` only on explicit user approval** — Claude never merges without being told to.
+2. **Commits and pushes** the feature branch before ending the turn.
+3. **Fetches and shares the preview URL** — after pushing, use the Vercel MCP tool `list_deployments` to retrieve the latest preview URL and share it with the user before ending the turn. Do not end the turn without sharing the preview URL.
+4. **Never merges to `main` without explicit user instruction** — wait for the user to say so. When told to merge, use the GitHub MCP tool `merge_pull_request` or push directly to `main`, then confirm it is done.
 
 ---
 
