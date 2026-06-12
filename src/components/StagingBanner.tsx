@@ -1,3 +1,5 @@
+// Default staging indicator — customize the appearance and message per project.
+// Controlled by NEXT_PUBLIC_APP_ENV=staging (set in Vercel's Preview environment).
 export function StagingBanner() {
   if (process.env.NEXT_PUBLIC_APP_ENV !== "staging") return null;
 

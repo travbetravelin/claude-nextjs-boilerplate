@@ -80,7 +80,11 @@ GitHub Actions secrets required:
 
 ## Staging Indicator
 
-When `NEXT_PUBLIC_APP_ENV=staging`, a blue banner renders at the top of every page via `<StagingBanner />` in `src/components/StagingBanner.tsx`. This is injected in `src/app/layout.tsx`.
+When `NEXT_PUBLIC_APP_ENV=staging`, a staging indicator renders at the top of every page via `<StagingBanner />` in `src/components/StagingBanner.tsx`. It is injected once in `src/app/layout.tsx`.
+
+**Default:** a blue full-width banner reading "STAGING ENVIRONMENT".
+
+**To customize for a project**, edit `StagingBanner.tsx` — change the color, copy, position, or replace it with a badge/toast/overlay. The trigger condition (`NEXT_PUBLIC_APP_ENV !== "staging"`) should stay the same.
 
 ---
 
