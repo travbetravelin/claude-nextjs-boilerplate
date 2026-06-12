@@ -12,32 +12,34 @@ Boilerplate for Next.js apps developed through Claude Code sessions — minimal 
 
 ## Starting a New Project from This Boilerplate
 
-Follow these steps in order. By the end you will have a running app in three environments: local, staging (preview), and production.
+Follow these steps in order. By the end you will have a running app in three environments: local (optional), staging (preview), and production.
 
 ### 1. Create a New Repo
 
-1. On GitHub, open this repo and click **"Use this template" → "Create a new repository"**
-2. Give it a name, set visibility, and create it
-3. Clone your new repo locally:
-   ```bash
-   git clone https://github.com/<your-org>/<your-repo>.git
-   cd <your-repo>
-   ```
+On GitHub, click **"Use this template" → "Create a new repository"**, give it a name, and create it.
+
+> If you're using **Claude Code on the web**, you don't need to clone the repo locally — Claude runs in a remote container and clones it automatically when a session starts. Skip to step 2.
+
+If you want to run the app on your own machine:
+```bash
+git clone https://github.com/<your-org>/<your-repo>.git
+cd <your-repo>
+```
 
 ---
 
 ### 2. Create Supabase Projects
 
-You need two Supabase projects — one for staging, one for production. Local development can use a third project or a local Supabase stack (see [Local Development](#local-development) below).
+You need two Supabase projects — one for staging, one for production.
 
-For each environment (staging, production):
+For each (staging, production):
 
 1. Go to [supabase.com](https://supabase.com) → **New project**
 2. Name it clearly (e.g. `my-app-staging`, `my-app-production`)
 3. After it provisions, go to **Project Settings → API** and copy:
-   - **Project URL** (`NEXT_PUBLIC_SUPABASE_URL`)
-   - **anon / public key** (`NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-   - **service_role key** (`SUPABASE_SERVICE_ROLE_KEY`) — keep this secret
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon / public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **service_role key** → `SUPABASE_SERVICE_ROLE_KEY` (keep this secret, never expose to the browser)
 
 Save these — you'll need them in steps 4 and 5.
 
@@ -47,22 +49,20 @@ Save these — you'll need them in steps 4 and 5.
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project**
 2. Import your new GitHub repo
-3. Leave the build settings as-is (the `vercel.json` in this repo handles them)
+3. Leave build settings as-is (`vercel.json` handles them)
 4. **Do not deploy yet** — add environment variables first (next step)
-5. After the project is created, go to **Settings → General** and copy:
-   - **Project ID** (`VERCEL_PROJECT_ID`)
-6. Go to your Vercel **team/account Settings → General** and copy:
-   - **Team ID** (`VERCEL_ORG_ID`)
-7. Go to **Account Settings → Tokens** and create a token:
-   - **Token** (`VERCEL_TOKEN`)
+5. After the project is created, collect these values:
+   - **Project Settings → General** → copy **Project ID** → `VERCEL_PROJECT_ID`
+   - **Team/Account Settings → General** → copy **Team ID** → `VERCEL_ORG_ID`
+   - **Account Settings → Tokens** → create a token → `VERCEL_TOKEN`
 
 ---
 
 ### 4. Configure Vercel Environment Variables
 
-In your Vercel project, go to **Settings → Environment Variables** and add the following. Vercel lets you scope each variable to specific environments — set them accordingly.
+In your Vercel project go to **Settings → Environment Variables**. Add each variable and scope it to the correct environment:
 
-| Variable | Development | Preview (staging) | Production |
+| Variable | Development | Preview | Production |
 |---|---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | dev project URL | staging project URL | production project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | dev anon key | staging anon key | production anon key |
@@ -73,7 +73,7 @@ In your Vercel project, go to **Settings → Environment Variables** and add the
 
 ### 5. Add GitHub Actions Secrets
 
-In your GitHub repo, go to **Settings → Secrets and variables → Actions** and add:
+In your GitHub repo go to **Settings → Secrets and variables → Actions** and add:
 
 | Secret | Value |
 |---|---|
@@ -84,16 +84,18 @@ In your GitHub repo, go to **Settings → Secrets and variables → Actions** an
 | `STAGING_SUPABASE_ANON_KEY` | staging anon key |
 | `PROD_SUPABASE_URL` | production project URL |
 | `PROD_SUPABASE_ANON_KEY` | production anon key |
-| `SUPABASE_ACCESS_TOKEN` | from Supabase account settings → Access tokens |
+| `SUPABASE_ACCESS_TOKEN` | Supabase account settings → Access tokens |
 | `PROD_SUPABASE_DB_PASSWORD` | production project database password (set when you created the project) |
 
 ---
 
-### 6. Local Development
+### 6. Local Development (optional)
+
+Only needed if you want to run the app on your own machine. If you're developing exclusively through Claude Code on the web, skip this.
 
 ```bash
 cp .env.example .env.local
-# Fill in your dev Supabase project credentials (or local stack — see below)
+# Fill in your dev Supabase project credentials
 
 npm install
 npm run dev
@@ -103,7 +105,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 **Optional: run a fully local Supabase stack** (requires Docker):
 ```bash
-npx supabase start   # starts local Supabase
+npx supabase start   # starts local Supabase instance
 npx supabase db push # applies migrations
 ```
 Use the credentials printed by `supabase start` in your `.env.local`.
@@ -112,13 +114,13 @@ Use the credentials printed by `supabase start` in your `.env.local`.
 
 ### 7. Verify the CI/CD Pipeline
 
-Push a branch and confirm:
+Push a feature branch and confirm:
 
-1. `preview.yml` runs on GitHub Actions — type-check, lint, build, deploy to Vercel
+1. `preview.yml` runs on GitHub Actions — type-check, lint, build, Vercel preview deploy
 2. A preview URL appears in the Actions run output (and as a PR comment if a PR is open)
-3. The staging Supabase credentials are used and the blue staging banner is visible at the top
+3. The blue staging banner is visible at the top of the preview
 
-Once that works, merge to `main` and confirm:
+Merge to `main` and confirm:
 
 1. `deploy.yml` runs — migrations apply to production Supabase, then Vercel production deploys
 2. Production URL is live with no staging banner
