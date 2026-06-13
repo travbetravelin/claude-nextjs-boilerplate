@@ -30,11 +30,13 @@ vercel.json        # Vercel project config
 
 Claude Code always:
 
-1. **Works on a feature branch** — never commits directly to `main`.
+1. **Works on a feature branch** — never commits directly to `main`, not even for small fixes.
    - Branch naming: `claude/<short-description>` (e.g. `claude/add-auth-flow`)
+   - Start a new `claude/` branch at the beginning of every session, even if the previous session's branch was merged.
+   - A merge approval is a one-time action for that branch only — it is NOT permission to keep committing to `main` afterward.
 2. **Commits and pushes** the feature branch before ending the turn.
 3. **Fetches and shares the preview URL** — after pushing, use the Vercel MCP tool `list_deployments` to retrieve the latest preview URL and share it with the user before ending the turn. Do not end the turn without sharing the preview URL.
-4. **Never merges to `main` without explicit user instruction** — wait for the user to say so. When told to merge, use the GitHub MCP tool `merge_pull_request` or push directly to `main`, then confirm it is done.
+4. **Never merges to `main` without explicit user instruction** — wait for the user to say so. When told to merge, use the GitHub MCP tool `merge_pull_request` or push directly to `main`, then confirm it is done. Then start a new feature branch for any further work.
 
 ---
 
