@@ -71,7 +71,45 @@ UI_SPEC.md         # UI/UX behavioral contracts for all interactive elements
 
 ---
 
-## 4. Claude's Role in This Repo
+## 4. First Session — Environment Verification
+
+**At the start of the first session in any new project, before doing any other work, verify that the environment is correctly wired.**
+
+Run through this checklist and report the results to the user in plain language — tell them exactly what is working and what is missing before proceeding.
+
+### Checklist
+
+1. **MCP servers** — confirm all three are connected and responsive:
+   - GitHub MCP — can read the repo and list branches
+   - Supabase MCP — can reach the project and list tables
+   - Vercel MCP — can list deployments for this project
+
+2. **Vercel environment variables** — use the Vercel MCP to confirm these exist and are scoped correctly:
+   - `NEXT_PUBLIC_SUPABASE_URL` — set for Preview and Production
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — set for Preview and Production
+   - `SUPABASE_SERVICE_ROLE_KEY` — set for Preview and Production
+   - `NEXT_PUBLIC_APP_ENV` — set to `staging` for Preview, `production` for Production
+   - **Production branch** — confirm Vercel is set to deploy `main` to production (Project Settings → Git → Production Branch)
+
+3. **GitHub Actions secrets** — use the GitHub MCP to confirm these secrets exist on the repo:
+   - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+   - `STAGING_SUPABASE_URL`, `STAGING_SUPABASE_ANON_KEY`
+   - `PROD_SUPABASE_URL`, `PROD_SUPABASE_ANON_KEY`
+   - `SUPABASE_ACCESS_TOKEN`, `PROD_SUPABASE_DB_PASSWORD`
+
+### Reporting to the User
+
+After running the checklist, respond with:
+- A plain-language summary of what is working
+- A clear list of anything missing, with a plain-language explanation of what it affects
+- The exact step in the setup guide where the missing item is configured
+- Do not proceed with any feature work until all items are confirmed
+
+If everything passes, confirm it clearly and ask the user what they'd like to build first.
+
+---
+
+## 5. Claude's Role in This Repo
 
 Claude always:
 
@@ -85,7 +123,7 @@ Claude always:
 
 ---
 
-## 5. Complexity & Fragility Assessment
+## 6. Complexity & Fragility Assessment
 
 Before implementing any change, assess its impact on system complexity and fragility. Use these signals explicitly in every response where they apply:
 
@@ -115,7 +153,7 @@ Confirm to proceed with the background job, or shall the simpler approach be use
 
 ---
 
-## 6. CI/CD Workflow
+## 7. CI/CD Workflow
 
 ```
 feature branch push (claude/<name>)
@@ -135,7 +173,7 @@ feature branch push (claude/<name>)
 - After every preview deploy, provide:
   1. The Vercel preview URL (fetched via `list_deployments`)
   2. A plain-language summary of what changed
-  3. A verification checklist (see Section 11)
+  3. A verification checklist (see Section 12)
   4. An explicit prompt: *"Please review and confirm when ready to push to production."*
 - Only merge to `main` after receiving explicit written approval.
 
@@ -144,7 +182,7 @@ Vercel Dashboard → Deployments → select the last working deployment → Rede
 
 ---
 
-## 7. Safety, Reversibility & Rollback Protocol
+## 8. Safety, Reversibility & Rollback Protocol
 
 ### All Changes
 
@@ -195,7 +233,7 @@ Changes to routing, authentication flow, or global layout require:
 
 ---
 
-## 8. Code Change Protocol
+## 9. Code Change Protocol
 
 - Only address what was asked. Do not silently improve, refactor, or expand scope.
 - When a question reveals a deeper underlying issue, flag it separately — do not silently fix it.
@@ -209,7 +247,7 @@ Changes to routing, authentication flow, or global layout require:
 
 ---
 
-## 9. Design System Governance
+## 10. Design System Governance
 
 ### Principles
 
@@ -228,7 +266,7 @@ Changes to routing, authentication flow, or global layout require:
 
 ---
 
-## 10. UI/UX Behavior Spec (Contract)
+## 11. UI/UX Behavior Spec (Contract)
 
 All interactive elements have a defined behavioral contract documented in `UI_SPEC.md`. Before building or modifying any interactive element, its spec must exist. If it does not, define it first — never infer behavior.
 
@@ -271,7 +309,7 @@ Every input field must specify:
 
 ---
 
-## 11. Verification Checkpoints
+## 12. Verification Checkpoints
 
 After any implementation, provide a plain-language checklist the user can verify without code knowledge:
 
@@ -295,7 +333,7 @@ Data:
 
 ---
 
-## 12. Debugging Protocol
+## 13. Debugging Protocol
 
 When something is broken, follow this sequence — do not skip steps:
 
@@ -307,7 +345,7 @@ When something is broken, follow this sequence — do not skip steps:
 
 ---
 
-## 13. Decision Explanation Standard
+## 14. Decision Explanation Standard
 
 When recommending an approach, always state:
 
@@ -320,7 +358,7 @@ The user must understand any decision well enough to approve or reject it. Never
 
 ---
 
-## 14. Scope Discipline
+## 15. Scope Discipline
 
 - Do not perform unrequested improvements, even obvious ones.
 - Do not rename variables, reformat files, or reorganize structure unless asked.
@@ -329,7 +367,7 @@ The user must understand any decision well enough to approve or reject it. Never
 
 ---
 
-## 15. Staging Indicator
+## 16. Staging Indicator
 
 When `NEXT_PUBLIC_APP_ENV=staging`, a staging banner renders at the top of every page via `<StagingBanner />` in `src/components/StagingBanner.tsx`, injected in `src/app/layout.tsx`.
 
