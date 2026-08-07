@@ -4,7 +4,8 @@ Boilerplate for Next.js apps developed through Claude Code sessions — minimal 
 
 ## Stack
 
-- **Next.js** (App Router) + TypeScript + Tailwind CSS
+- **Next.js** (App Router) + TypeScript
+- **Design system** — token-driven global CSS (`src/app/globals.css`, no Tailwind) + a shared component kit in `src/components/ui/` (see `COMPONENTS.md` and `docs/design-system.md`)
 - **Supabase** — auth, database, per-environment projects
 - **Vercel** — preview and production deployments via GitHub Actions
 
@@ -85,7 +86,12 @@ In your GitHub repo go to **Settings → Secrets and variables → Actions** and
 | `PROD_SUPABASE_URL` | production project URL |
 | `PROD_SUPABASE_ANON_KEY` | production anon key |
 | `SUPABASE_ACCESS_TOKEN` | Supabase account settings → Access tokens |
+| `SUPABASE_PROJECT_REF` | production project reference ID (Supabase Project Settings → General) |
 | `PROD_SUPABASE_DB_PASSWORD` | production project database password (set when you created the project) |
+| `STAGING_SUPABASE_PROJECT_REF` | staging project reference ID |
+| `STAGING_SUPABASE_DB_PASSWORD` | staging project database password |
+
+**Recommended: protect `main`.** In **Settings → Branches**, add a branch protection rule for `main` requiring the preview checks to pass before merging. This makes the "preview first, then merge" workflow enforced by GitHub rather than by convention — important if non-technical collaborators drive Claude Code sessions on this repo.
 
 ---
 
@@ -116,13 +122,13 @@ Use the credentials printed by `supabase start` in your `.env.local`.
 
 Push a feature branch and confirm:
 
-1. `preview.yml` runs on GitHub Actions — type-check, lint, build, Vercel preview deploy
+1. `preview.yml` runs on GitHub Actions — type-check, lint, tests, build, Vercel preview deploy
 2. A preview URL appears in the Actions run output (and as a PR comment if a PR is open)
-3. The blue staging banner is visible at the top of the preview
+3. The staging banner is visible at the top of the preview
 
 Merge to `main` and confirm:
 
-1. `deploy.yml` runs — migrations apply to production Supabase, then Vercel production deploys
+1. `deploy.yml` runs — migrations apply to staging Supabase first, then production Supabase, then Vercel production deploys
 2. Production URL is live with no staging banner
 
 ---

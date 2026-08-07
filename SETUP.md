@@ -119,6 +119,8 @@ Add each of the following. The secret name must match exactly — no extra space
 | `SUPABASE_ACCESS_TOKEN` | Go to Supabase → Account Settings → Access Tokens → Generate new token |
 | `PROD_SUPABASE_DB_PASSWORD` | The password you set when creating the production Supabase project |
 | `SUPABASE_PROJECT_REF` | Go to your production Supabase project → Settings → General → Reference ID |
+| `STAGING_SUPABASE_PROJECT_REF` | Same place, but in your **staging** Supabase project |
+| `STAGING_SUPABASE_DB_PASSWORD` | The password you set when creating the staging Supabase project |
 
 ---
 

@@ -26,7 +26,27 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresh session so it doesn't expire on the server
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+
+  // Pre-auth routes: /login, and /reset — the password-recovery link's code
+  // exchange happens client-side after the page loads, so /reset must be
+  // reachable without a session or every reset link would bounce to /login.
+  const isPreAuth = path === "/login" || path === "/reset";
+
+  if (!user && !isPreAuth) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+  if (user && path === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }

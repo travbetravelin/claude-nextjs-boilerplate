@@ -23,15 +23,23 @@ This file governs how Claude assists with building and managing this web applica
 ```
 src/
   app/             # Next.js App Router pages & layouts
-  components/      # Shared React components
+    globals.css    # THE stylesheet: design tokens (brand layer + system) and all component styles
+  components/      # Shared app-level components (StagingBanner, ThemeToggle)
+    ui/            # The component kit — check COMPONENTS.md before building anything new
   lib/
-    supabase/      # Supabase clients (browser, server, middleware)
+    supabase/      # Supabase clients (browser, server, middleware, admin)
+  test/            # Shared test utilities (Supabase mock harness)
 supabase/
-  migrations/      # SQL migration files
+  migrations/      # SQL migration files (see its README for conventions)
+    rollbacks/     # Paired hand-run rollback file for every migration
+docs/
+  design-system.md       # Layout, components, styling rules — the enforcement doc for UI work
+  recipes/               # Self-contained backend patterns (roles, audit, archiving)
+  handoff-checklist.md   # Transferring a finished app to a client
 .github/
   workflows/
-    preview.yml    # Triggered on feature branches → deploys preview
-    deploy.yml     # Triggered on main → deploys production
+    preview.yml    # Triggered on feature branches → checks + preview deploy
+    deploy.yml     # Triggered on main → staging migrations → prod migrations → prod deploy
 .env.example       # Copy to .env.local; never commit real values
 vercel.json        # Vercel project config
 COMPONENTS.md      # Component registry — check before building anything new
@@ -44,20 +52,25 @@ UI_SPEC.md         # UI/UX behavioral contracts for all interactive elements
 
 | Layer | Technology |
 |---|---|
-| **Frontend Framework** | Next.js (App Router) + TypeScript + Tailwind CSS |
+| **Frontend Framework** | Next.js (App Router) + TypeScript |
+| **Styling** | Token-driven global CSS in `src/app/globals.css` — no Tailwind, no CSS modules, no additional stylesheet files |
+| **Component Library** | `src/components/ui/` (this repo's own kit — registered in `COMPONENTS.md`) |
+| **Design Token Source** | `src/app/globals.css` (brand layer at top, system tokens below) |
 | **Database** | Supabase (PostgreSQL) |
 | **Auth** | Supabase Auth |
 | **File Storage** | Supabase Storage |
 | **Hosting / Deploy** | Vercel (via GitHub Actions) |
-| **DB Migrations** | `supabase/migrations/` |
-| **Component Library** | [specify — e.g. shadcn/ui] |
-| **Design Token Source** | `/styles/tokens.css` |
+| **DB Migrations** | `supabase/migrations/` (+ paired `rollbacks/`) |
+| **Testing** | Vitest + Testing Library (`npm run test`) |
 | **UI Behavior Spec** | `UI_SPEC.md` |
 | **Component Registry** | `COMPONENTS.md` |
 
 ### Hard Rules
 
 - Never propose a tool, library, or pattern outside this stack without flagging it as a deviation and requesting explicit approval.
+- All styling lives in `src/app/globals.css`. Never add Tailwind, CSS modules, or a new stylesheet file. Never hardcode a color, font size, or spacing value — use the tokens.
+- **Approved escape hatch:** if a feature genuinely needs a complex interactive primitive the kit lacks (combobox, date picker, toast), adding a single headless library (e.g. Radix) *for that one component* is a pre-approved deviation — building focus traps and keyboard handling by hand is where accessibility quietly breaks. Wrap it in a kit component, style it with tokens, register it in `COMPONENTS.md`.
+- **Version policy:** the template tracks current stable Next.js/React. Apps created from it do **not** chase framework upgrades afterward — they stay on their versions unless there's a concrete reason (security fix, needed feature). Never propose an upgrade as routine maintenance.
 - `SUPABASE_SERVICE_ROLE_KEY` is server-only. It must never appear in frontend code under any circumstances. Only the anon/public key is permitted on the frontend.
 - Dev, staging, and production Supabase projects are always separate, enforced via Vercel environment variables.
 
@@ -95,7 +108,8 @@ Run through this checklist and report the results to the user in plain language 
    - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
    - `STAGING_SUPABASE_URL`, `STAGING_SUPABASE_ANON_KEY`
    - `PROD_SUPABASE_URL`, `PROD_SUPABASE_ANON_KEY`
-   - `SUPABASE_ACCESS_TOKEN`, `PROD_SUPABASE_DB_PASSWORD`
+   - `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `PROD_SUPABASE_DB_PASSWORD`
+   - `STAGING_SUPABASE_PROJECT_REF`, `STAGING_SUPABASE_DB_PASSWORD`
 
 ### Reporting to the User
 
@@ -109,7 +123,44 @@ If everything passes, confirm it clearly and ask the user what they'd like to bu
 
 ---
 
-## 5. Claude's Role in This Repo
+## 5. Project Mode — Static Site or App
+
+This template supports two kinds of projects. **In the first session of a new
+project, after environment verification, ask the user which one this is** —
+never assume:
+
+> *"Is this project a static website (pages and content, no login), or an app
+> (users log in and work with data)?"*
+
+### App mode (default)
+
+The template as-is. Supabase, auth, and migrations stay. Complete the full
+environment checklist in Section 4 before feature work.
+
+### Static mode — strip-down checklist
+
+A static site carries none of the app machinery. In the first session, remove
+it — this is a documented, repeatable operation, not an improvisation. Delete:
+
+1. `src/lib/supabase/` and `src/middleware.ts`
+2. `src/app/(auth)/` (login/reset routes) and `src/lib/auth.ts`
+3. `supabase/` (entire directory)
+4. `docs/recipes/` (all recipes are database patterns)
+5. Supabase steps from `.github/workflows/deploy.yml` (the two
+   "Apply DB migrations" steps) and the Supabase env vars from both workflows
+6. `@supabase/ssr` and `@supabase/supabase-js` from `package.json`
+   (`npm uninstall`), and `src/test/apiTestUtils.ts`
+7. Supabase variables from `.env.example`; Supabase sections from `README.md`
+
+Keep: the design system (`globals.css`, `src/components/ui/`), the theme
+system, the staging banner, testing, CI, and all governance docs. Verify with
+`npm run build` and `npm run test`, then commit the strip-down as its own
+commit before any feature work. The Section 4 checklist reduces to
+GitHub + Vercel items only (skip everything Supabase).
+
+---
+
+## 6. Claude's Role in This Repo
 
 Claude always:
 
@@ -123,7 +174,7 @@ Claude always:
 
 ---
 
-## 6. Complexity & Fragility Assessment
+## 7. Complexity & Fragility Assessment
 
 Before implementing any change, assess its impact on system complexity and fragility. Use these signals explicitly in every response where they apply:
 
@@ -153,7 +204,7 @@ Confirm to proceed with the background job, or shall the simpler approach be use
 
 ---
 
-## 7. CI/CD Workflow
+## 8. CI/CD Workflow
 
 ```
 feature branch push (claude/<name>)
@@ -173,7 +224,7 @@ feature branch push (claude/<name>)
 - After every preview deploy, provide:
   1. The Vercel preview URL (fetched via `list_deployments`)
   2. A plain-language summary of what changed
-  3. A verification checklist (see Section 12)
+  3. A verification checklist (see Section 13)
   4. An explicit prompt: *"Please review and confirm when ready to push to production."*
 - Only merge to `main` after receiving explicit written approval.
 
@@ -182,7 +233,7 @@ Vercel Dashboard → Deployments → select the last working deployment → Rede
 
 ---
 
-## 8. Safety, Reversibility & Rollback Protocol
+## 9. Safety, Reversibility & Rollback Protocol
 
 ### All Changes
 
@@ -194,18 +245,13 @@ Vercel Dashboard → Deployments → select the last working deployment → Rede
 All schema changes are managed exclusively through `supabase/migrations/`.
 
 - Create a new file: `supabase migration new <descriptive-name>`
-- Every migration must include a `-- migrate:down` rollback block
+- Every migration gets a **paired rollback file** in `supabase/migrations/rollbacks/` — never a rollback block inside the migration file itself (`supabase db push` runs the whole file, so an inline rollback would undo the migration immediately)
+- Every migration opens with a comment explaining **why**; destructive rollbacks say so loudly in their first line
 - Migration files are never edited after being applied — create a new migration to correct or reverse
 
-**Migration file format:**
+**Format:** see `supabase/migrations/README.md` for the full convention and a worked example (`20260807000000_baseline_profiles.sql` is a live one).
 
-```sql
--- migrate:up
-ALTER TABLE records ADD COLUMN category TEXT;
-
--- migrate:down
-ALTER TABLE records DROP COLUMN category;
-```
+**Archive, don't delete.** Records that users create get an `active boolean` and are archived, never hard-deleted. Archiving always confirms (quoting real impact counts where possible); restoring never confirms. Cascades stop *new* activity but never hide *past* activity. The full doctrine with SQL patterns: `docs/recipes/archiving-not-deleting.md`.
 
 **Before any `UPDATE` or `DELETE`:**
 
@@ -220,7 +266,7 @@ ALTER TABLE records DROP COLUMN category;
 - Manual apply (dev): `supabase db push`
 
 **To roll back a database migration in production:**
-Run the `-- migrate:down` block from the migration file via the Supabase SQL editor → confirm with a `SELECT` → notify rollback is complete.
+Run the migration's paired file from `supabase/migrations/rollbacks/` via the Supabase SQL editor → confirm with a `SELECT` → notify rollback is complete.
 
 ### Front-End Breaking Changes
 
@@ -233,7 +279,7 @@ Changes to routing, authentication flow, or global layout require:
 
 ---
 
-## 9. Code Change Protocol
+## 10. Code Change Protocol
 
 - Only address what was asked. Do not silently improve, refactor, or expand scope.
 - When a question reveals a deeper underlying issue, flag it separately — do not silently fix it.
@@ -247,7 +293,7 @@ Changes to routing, authentication flow, or global layout require:
 
 ---
 
-## 10. Design System Governance
+## 11. Design System Governance
 
 ### Principles
 
@@ -261,12 +307,14 @@ Changes to routing, authentication flow, or global layout require:
 - If an existing component can be used or adapted, use it. Do not create a new one.
 - If a request implies a new component is needed, stop and ask:
   *"This would require a new component. Shall it be added to the design system or is there an existing alternative?"*
-- All visual decisions (color, spacing, typography, border radius, shadow) must reference design tokens in `/styles/tokens.css`. Never hardcode visual values.
+- All visual decisions (color, spacing, typography, border radius, shadow) must reference the design tokens in `src/app/globals.css`. Never hardcode visual values.
+- **Rebranding is a brand-layer edit only.** Per-client branding is done by editing the fenced BRAND LAYER block at the top of `globals.css` (colors + font). If a rebrand seems to require edits below that line, stop — that's a design-system change, not a rebrand, and needs explicit approval.
+- Read `docs/design-system.md` before any UI work — it is the enforcement doc for layout, density, dark theme, and component usage, including its anti-patterns table.
 - Use active, plain language for all UI copy (see `UI_SPEC.md`).
 
 ---
 
-## 11. UI/UX Behavior Spec (Contract)
+## 12. UI/UX Behavior Spec (Contract)
 
 All interactive elements have a defined behavioral contract documented in `UI_SPEC.md`. Before building or modifying any interactive element, its spec must exist. If it does not, define it first — never infer behavior.
 
@@ -309,7 +357,7 @@ Every input field must specify:
 
 ---
 
-## 12. Verification Checkpoints
+## 13. Verification Checkpoints
 
 After any implementation, provide a plain-language checklist the user can verify without code knowledge:
 
@@ -333,7 +381,7 @@ Data:
 
 ---
 
-## 13. Debugging Protocol
+## 14. Debugging Protocol
 
 When something is broken, follow this sequence — do not skip steps:
 
@@ -345,7 +393,7 @@ When something is broken, follow this sequence — do not skip steps:
 
 ---
 
-## 14. Decision Explanation Standard
+## 15. Decision Explanation Standard
 
 When recommending an approach, always state:
 
@@ -358,7 +406,7 @@ The user must understand any decision well enough to approve or reject it. Never
 
 ---
 
-## 15. Scope Discipline
+## 16. Scope Discipline
 
 - Do not perform unrequested improvements, even obvious ones.
 - Do not rename variables, reformat files, or reorganize structure unless asked.
@@ -367,12 +415,12 @@ The user must understand any decision well enough to approve or reject it. Never
 
 ---
 
-## 16. Staging Indicator
+## 17. Staging Indicator
 
 When `NEXT_PUBLIC_APP_ENV=staging`, a staging banner renders at the top of every page via `<StagingBanner />` in `src/components/StagingBanner.tsx`, injected in `src/app/layout.tsx`.
 
-**Default:** blue full-width banner reading "STAGING ENVIRONMENT".
+**Default:** full-width banner reading "STAGING ENVIRONMENT", colored by the `--staging-header-bg` token — deliberately far from the brand ramp so staging is unmistakable.
 
-To customize: edit `StagingBanner.tsx` — change color, copy, or position. The trigger condition (`NEXT_PUBLIC_APP_ENV !== "staging"`) must stay the same.
+To customize: edit `StagingBanner.tsx` — change copy or position, or adjust the token in `globals.css`. The trigger condition (`NEXT_PUBLIC_APP_ENV !== "staging"`) must stay the same.
 
 The staging banner should always be visible in the verification checklist for any preview deployment.

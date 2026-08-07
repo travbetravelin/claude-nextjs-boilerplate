@@ -26,6 +26,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test
+        run: npm run test
+
       - name: Build
         run: npm run build
         env:
@@ -33,26 +36,39 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_ENV: staging
 
-      # Vercel CLI deploys to preview and posts the URL as a PR comment.
+      # Vercel CLI prints the deployment URL to stdout (its logs go to
+      # stderr), so capturing stdout alone yields the URL reliably.
       - name: Deploy to Vercel (preview)
         id: vercel
         run: |
           npm install -g vercel
           DEPLOY_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} \
             --scope ${{ secrets.VERCEL_ORG_ID }} \
-            --yes 2>&1 | tail -1)
+            --yes)
           echo "url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
+      # This workflow runs on push, so there is no PR event payload —
+      # look up any open PR for this branch and comment there if one exists.
       - name: Comment preview URL on PR
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            const branch = context.ref.replace('refs/heads/', '');
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${branch}`,
+            });
+            if (prs.length === 0) {
+              core.info(`No open PR for ${branch}; skipping comment.`);
+              return;
+            }
+            await github.rest.issues.createComment({
+              issue_number: prs[0].number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `✅ Preview deployed: ${{ steps.vercel.outputs.url }}`
