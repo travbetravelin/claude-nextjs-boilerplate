@@ -22,12 +22,14 @@ something that breaks later if it's skipped now.
 Every token created under *your* accounts stops working when access changes.
 Recreate each under the client's accounts and update where it's stored:
 
-- [ ] `VERCEL_TOKEN` — new token from the client's Vercel account → GitHub
-      Actions secrets.
+- [ ] `VERCEL_TOKEN` — new token from the client's Vercel account, for
+      their Claude MCP connection (deploys themselves need no token —
+      Vercel's git integration handles them).
 - [ ] `SUPABASE_ACCESS_TOKEN` — new token from the client's Supabase
       account → GitHub Actions secrets.
-- [ ] Confirm `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` still match after the
-      Vercel transfer (they change if the project moved teams).
+- [ ] Confirm Vercel's git integration still points at the transferred
+      GitHub repo (Project Settings → Git) — the connection can drop when
+      the repo or project changes owners.
 - [ ] Confirm all `*_SUPABASE_*` secrets and Vercel environment variables
       still point at the transferred projects.
 - [ ] Client has stored the Supabase **database passwords** somewhere safe

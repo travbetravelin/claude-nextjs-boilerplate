@@ -38,8 +38,8 @@ docs/
   handoff-checklist.md   # Transferring a finished app to a client
 .github/
   workflows/
-    preview.yml    # Triggered on feature branches → checks + preview deploy
-    deploy.yml     # Triggered on main → staging migrations → prod migrations → prod deploy
+    preview.yml    # Triggered on feature branches → quality checks (Vercel deploys previews itself)
+    deploy.yml     # Triggered on main → checks → staging migrations → prod migrations (Vercel deploys the code)
 .env.example       # Copy to .env.local; never commit real values
 vercel.json        # Vercel project config
 COMPONENTS.md      # Component registry — check before building anything new
@@ -105,7 +105,6 @@ Run through this checklist and report the results to the user in plain language 
    - **Production branch** — confirm Vercel is set to deploy `main` to production (Project Settings → Git → Production Branch)
 
 3. **GitHub Actions secrets** — use the GitHub MCP to confirm these secrets exist on the repo:
-   - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
    - `STAGING_SUPABASE_URL`, `STAGING_SUPABASE_ANON_KEY`
    - `PROD_SUPABASE_URL`, `PROD_SUPABASE_ANON_KEY`
    - `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `PROD_SUPABASE_DB_PASSWORD`
@@ -209,15 +208,22 @@ Confirm to proceed with the background job, or shall the simpler approach be use
 
 ```
 feature branch push (claude/<name>)
-  └─ preview.yml ──► Vercel preview deploy ──► preview URL shared with user
+  ├─ preview.yml ──► quality checks (type-check, lint, tests, build)
+  └─ Vercel git integration ──► preview deploy ──► preview URL shared with user
                                                        │
                                               User reviews & approves
                                                        │
                                               Merge to main
                                                        │
-                              deploy.yml ──► DB migrations (staging first)
-                                        ──► Vercel production deploy
+                  ├─ deploy.yml ──► checks ──► DB migrations (staging first, then prod)
+                  └─ Vercel git integration ──► production deploy
 ```
+
+**Migration ordering rule:** Vercel deploys `main` as soon as it's pushed,
+so new code can be live up to a minute before `deploy.yml` finishes the
+migrations. Schema changes are therefore merged **before** the code that
+depends on them (two merges: schema first, then the feature), and written
+additively so old code keeps working against the new schema.
 
 ### Rules
 

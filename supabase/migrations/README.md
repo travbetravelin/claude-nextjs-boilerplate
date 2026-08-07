@@ -40,6 +40,13 @@ ALTER TABLE profiles DROP COLUMN avatar_url;
 2. **Staging** — applied automatically by `deploy.yml` when merging to `main` (staging runs first).
 3. **Production** — applied by `deploy.yml` after staging succeeds.
 
+**Schema first, code second.** Vercel deploys `main`'s code the moment it's
+pushed, while migrations take up to a minute longer in Actions — so a merge
+that ships a migration *and* the code that needs it can briefly run new code
+against the old schema. Merge schema changes on their own first, confirm the
+migration applied, then merge the feature code. Write migrations additively
+(add columns/tables; don't repurpose) so old code keeps working in between.
+
 **To roll back in staging or production:** run the matching `rollbacks/` file
 via the Supabase SQL editor, confirm with a `SELECT`, then create a new
 migration that records the reversal so the migration history stays truthful.

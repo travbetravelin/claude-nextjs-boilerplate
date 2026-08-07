@@ -70,12 +70,15 @@ Do this twice — once for staging, once for production — so you have two comp
 4. Leave all build settings as-is — the repo's `vercel.json` handles them
 5. **Do not click Deploy yet** — add environment variables first (Step 4)
 
-After the project is created, collect these values into your notes doc:
+Importing the repo connects Vercel's git integration, which handles **all
+deploys** from here on: every feature branch gets its own preview site
+automatically, and every merge to `main` deploys production. Nothing else
+to wire up for deploys.
+
+One value to collect for Step 8 (the Claude desktop connection):
 
 | What to copy | Where to find it | Label it in your notes |
 |---|---|---|
-| Project ID | Project Settings → General → Project ID | `VERCEL_PROJECT_ID` |
-| Team ID | Your account/team Settings → General → Team ID | `VERCEL_ORG_ID` |
 | Token | Account Settings → Tokens → Create token (name it `claude-code`) | `VERCEL_TOKEN` |
 
 ### Set the Production Branch
@@ -109,9 +112,6 @@ Add each of the following. The secret name must match exactly — no extra space
 
 | Secret name | Value |
 |---|---|
-| `VERCEL_TOKEN` | from Step 3 |
-| `VERCEL_ORG_ID` | from Step 3 |
-| `VERCEL_PROJECT_ID` | from Step 3 |
 | `STAGING_SUPABASE_URL` | staging project URL |
 | `STAGING_SUPABASE_ANON_KEY` | staging anon key |
 | `PROD_SUPABASE_URL` | production project URL |

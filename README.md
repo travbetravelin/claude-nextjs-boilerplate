@@ -52,10 +52,11 @@ Save these — you'll need them in steps 4 and 5.
 2. Import your new GitHub repo
 3. Leave build settings as-is (`vercel.json` handles them)
 4. **Do not deploy yet** — add environment variables first (next step)
-5. After the project is created, collect these values:
-   - **Project Settings → General** → copy **Project ID** → `VERCEL_PROJECT_ID`
-   - **Team/Account Settings → General** → copy **Team ID** → `VERCEL_ORG_ID`
-   - **Account Settings → Tokens** → create a token → `VERCEL_TOKEN`
+
+Importing the repo connects Vercel's git integration, which handles **all
+deploys**: every feature branch gets a preview automatically, and every push
+to `main` deploys to production. GitHub Actions runs the quality checks and
+database migrations only — no Vercel tokens or secrets are needed.
 
 ---
 
@@ -78,9 +79,6 @@ In your GitHub repo go to **Settings → Secrets and variables → Actions** and
 
 | Secret | Value |
 |---|---|
-| `VERCEL_TOKEN` | from step 3 |
-| `VERCEL_ORG_ID` | from step 3 |
-| `VERCEL_PROJECT_ID` | from step 3 |
 | `STAGING_SUPABASE_URL` | staging project URL |
 | `STAGING_SUPABASE_ANON_KEY` | staging anon key |
 | `PROD_SUPABASE_URL` | production project URL |
@@ -122,14 +120,14 @@ Use the credentials printed by `supabase start` in your `.env.local`.
 
 Push a feature branch and confirm:
 
-1. `preview.yml` runs on GitHub Actions — type-check, lint, tests, build, Vercel preview deploy
-2. A preview URL appears in the Actions run output (and as a PR comment if a PR is open)
+1. `preview.yml` ("Checks") runs on GitHub Actions — type-check, lint, tests, build
+2. Vercel's git integration deploys a preview of the branch (URL in the Vercel dashboard, and as a Vercel bot comment if a PR is open)
 3. The staging banner is visible at the top of the preview
 
 Merge to `main` and confirm:
 
-1. `deploy.yml` runs — migrations apply to staging Supabase first, then production Supabase, then Vercel production deploys
-2. Production URL is live with no staging banner
+1. `deploy.yml` ("Production Migrations") runs — checks, then migrations apply to staging Supabase first, then production Supabase
+2. Vercel deploys `main` to production; the production URL is live with no staging banner
 
 ---
 
