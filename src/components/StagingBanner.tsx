@@ -1,10 +1,23 @@
-// Default staging indicator — customize the appearance and message per project.
-// Controlled by NEXT_PUBLIC_APP_ENV=staging (set in Vercel's Preview environment).
+// Default staging indicator — customize the message per project.
+// Controlled by NEXT_PUBLIC_APP_ENV=staging (set in Vercel's Preview
+// environment). Uses --staging-header-bg, an environment status color kept
+// deliberately far from the brand ramp so staging is unmistakable.
 export function StagingBanner() {
   if (process.env.NEXT_PUBLIC_APP_ENV !== "staging") return null;
 
   return (
-    <div className="w-full bg-blue-600 text-white text-center text-sm py-1 font-medium tracking-wide">
+    <div
+      style={{
+        width: "100%",
+        background: "var(--staging-header-bg)",
+        color: "var(--on-primary)",
+        textAlign: "center",
+        fontSize: "var(--fs-label)",
+        fontWeight: 600,
+        letterSpacing: "0.05em",
+        padding: "var(--s1) 0",
+      }}
+    >
       STAGING ENVIRONMENT
     </div>
   );

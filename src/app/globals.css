@@ -1,26 +1,648 @@
-@import "tailwindcss";
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ═══════════════════════════════════════════════════════════════════════
+   ═══ BRAND LAYER — edit this block per client; nothing below this line
+   ═══ should need touching for a rebrand ═══
+   ═══════════════════════════════════════════════════════════════════════
+   The whole visual identity hangs off this one ramp plus a font choice.
+   Pick six steps of a single hue (a light wash → a near-black ground) and
+   the system layer below derives everything else — tints, dark theme,
+   hovers — with color-mix, so a rebrand is: swap these hexes, done.
+
+   Two values live OUTSIDE this file and must be kept in sync by hand:
+   the theme-color constants in src/lib/theme.ts and the inline script in
+   src/app/layout.tsx (they mirror --primary-dark's resolved value in each
+   theme, for the browser-chrome color). */
+:root,
+[data-theme="light"] {
+  /* Primary — placeholder desaturated blue; replace per client */
+  --primary: #3a6ea8;        /* the brand color: buttons, links, focus */
+  --primary-dark: #1e4468;   /* header/thead ground; emphasis text */
+  --primary-light: #5f93c8;  /* lighter accent step */
+  --primary-bg: #eff5fa;     /* faint brand wash (selected, callouts) */
+  --primary-100: #dbe7f3;    /* light tint (tfoot bands, hover fills) */
+  --primary-200: #b7cfe6;    /* stronger tint (tinted borders) */
+  --primary-darker: #14304d; /* one step darker than --primary-dark */
+
+  /* Font choice — the body stack. Swap for a webfont per client if the
+     brand demands one; the default system stack costs zero bytes. */
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+/* ═══ END BRAND LAYER ═══════════════════════════════════════════════════ */
+
+/* ── System layer ────────────────────────────────────────────────────────
+   Everything from here down is brand-agnostic: it either derives from the
+   brand ramp above or is a neutral/status value shared by every client.
+
+   [data-theme="light"] rides along on :root above so a light *island* can
+   be scoped inside a dark page — custom properties inherit, so the nearest
+   data-theme wins for that subtree. The <html> element itself still
+   signals light by absence (see src/lib/theme.ts). */
+:root,
+[data-theme="light"] {
+  /* --primary-dark does double duty as a ground (header, tfoot) and as
+     emphasis text (color: var(--primary-dark) on a tint). Those two jobs
+     want different values once dark theme remaps --primary-dark to a dark
+     ground — --primary-emphasis is the text-only half, equal to
+     --primary-dark in light mode so this is a no-op split here. */
+  --primary-emphasis: var(--primary-dark);
+  /* Ink on brand grounds (header, primary/danger buttons, thead bands).
+     White in both themes — the grounds stay dark under dark theme — but
+     one token means any future remap is one knob. */
+  --on-primary: #fff;
+  /* Nav link ink — one token instead of rgba-white hand-rolled at
+     drifting opacities across header/drawer/inline links. */
+  --nav-ink: rgba(255,255,255,0.85);
+  /* Highlight washes ("my row/column", staged cells) — one hue, two
+     strengths, derived from --primary so dark theme follows automatically. */
+  --primary-tint: color-mix(in srgb, var(--primary) 9%, transparent);
+  --primary-tint-strong: color-mix(in srgb, var(--primary) 16%, transparent);
+  /* Staging-environment header banner — an environment status color,
+     deliberately far from most brand ramps so staging is unmistakable.
+     If a client's brand lands near this blue, move it, not the brand. */
+  --staging-header-bg: #1d4ed8;
+
+  --text: #1b1b1b;
+  --muted: #6b7280;
+  /* Lighter than --muted — "(optional)" field hints, "no data"/"—"
+     placeholders. The single most repeated bare literal in the source app
+     before this token existed. */
+  --muted-light: #9ca3af;
+  --border: #e5e7eb;
+  --border-light: #f0f0f0;
+  /* Stronger than --border — rules where the rule itself is structure,
+     not just a card edge. */
+  --border-strong: #d1d5db;
+
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --danger-fg: #991b1b;
+  --danger-border: #fca5a5;
+  --success: #15803d;
+  --success-bg: #d1fae5;
+  --success-fg: #065f46;
+  --success-border: #6ee7b7;
+  --warn-bg: #fef3c7;
+  --warn-fg: #92400e;
+  /* Distinct from --warn-bg — the badge amber reads as a compact pill;
+     this is the lighter, wider shade used behind full advisory-warning
+     paragraphs (ConfirmDialog's card placement, warn StatTiles). */
+  --warn-alert-bg: #fffbeb;
+  --warn-alert-border: #fcd34d;
+  /* Standalone vivid-amber accent text — distinct from --warn-fg, which is
+     only ever paired with --warn-bg as a badge/pill fill. */
+  --warn-accent: #d97706;
+  --neutral-bg: #f3f4f6;
+  --neutral-fg: #374151;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+
+  /* Page chrome + table surfaces (must be variables for dark theme).
+     -1 is the standard card ground; -0/-2 exist for parity with dark
+     theme's three-step ramp even though light mode only needs one value. */
+  --page-bg: #f4f6f8;
+  --text-cell: #374151;
+  --row-hover: #f8faf9;
+  --surface-0: var(--page-bg);
+  --surface-1: white;
+  --surface-2: var(--row-hover);
+
+  /* ── Type scale ── */
+  --fs-display: 24px; --fs-h1: 20px; --fs-h2: 16px;
+  --fs-body: 14px;    --fs-table: 13px;
+  --fs-label: 12px;   --fs-micro: 11px;
+
+  /* ── Space & shape ── */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 40px;
+  --r-sm: 4px; --r-md: 6px; --r-lg: 10px; --r-pill: 999px;
+
+  /* ── Density — Desk is the default on wide screens ── */
+  --ctl-h: 30px; --row-h: 28px; --cell-y: 6px; --cell-x: 10px;
+  /* .btn-sm's own control height — .btn sets height: var(--ctl-h), so
+     without its own token .btn-sm can only shrink font/padding and every
+     "small" button still renders full height. */
+  --ctl-h-sm: 24px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Field density — for screens used on a phone, standing up, for a couple
+   of minutes at a time. Opt a page in with data-density="field". */
+[data-density="field"] {
+  --fs-body: 16px; --fs-table: 15px; --fs-label: 14px;
+  --ctl-h: 44px; --row-h: 44px; --cell-y: 10px; --cell-x: 14px;
+  --ctl-h-sm: 36px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Phones never get Desk's tighter targets, whatever density the page asked
+   for — a 30px control is a mis-tap magnet below 720px. */
+@media (max-width: 720px) {
+  [data-density="desk"] { --ctl-h: 44px; --fs-body: 16px; --fs-table: 15px; --ctl-h-sm: 36px; }
+}
+
+/* ── Dark theme ──────────────────────────────────────────────────────────
+   Same tokens, remapped — no component changes, only the values behind
+   the variable names. Neutral surfaces/ink are fixed hexes; every brand-
+   derived token is a color-mix over the BRAND LAYER ramp, so a rebrand
+   never has to touch this block. */
+[data-theme="dark"] {
+  --surface-0: #0f1419; --surface-1: #161d23; --surface-2: #1e272e;
+  --text: #e6edf1; --muted: #8fa3b0; --muted-light: #5a6b78;
+  --border: #2b3740; --border-light: #1e272e; --border-strong: #3d4c57;
+
+  /* Brand ramp, re-derived: the accent lightens to keep contrast on dark
+     surfaces; the grounds sink toward the surface ramp. --primary-light is
+     deliberately NOT remapped — it's the value the others derive from. */
+  --primary: var(--primary-light);
+  --primary-emphasis: color-mix(in srgb, var(--primary-light) 65%, white);
+  /* Ground tokens derive from --primary-darker (not from themselves — a
+     token can't reference itself inside a remap): the header/thead ground
+     keeps most of the brand's deepest step, one rung sinks further. */
+  --primary-dark: color-mix(in srgb, var(--primary-darker) 85%, #0f1419);
+  --primary-darker: color-mix(in srgb, var(--primary-darker) 55%, #0f1419);
+  --primary-bg: color-mix(in srgb, var(--primary-light) 10%, #0f1419);
+  --primary-100: color-mix(in srgb, var(--primary-light) 18%, #0f1419);
+  --primary-200: color-mix(in srgb, var(--primary-light) 32%, #0f1419);
+
+  /* page chrome + table surfaces */
+  --page-bg: var(--surface-0);
+  --text-cell: #c7d5de;
+  --row-hover: #1a232a;
+
+  /* status sets — badge fills and the raw semantic tokens they draw from */
+  --warn-bg: #3a2e10;      --warn-fg: #e8c55f;
+  --success-bg: #0f2e22;   --success-fg: #5ed6a4;
+  --danger-bg: #38181a;    --danger-fg: #f38b86;
+  --neutral-bg: #242e35;   --neutral-fg: #c7d5de;
+  /* bare accent tokens, lightened the same way as the badge inks */
+  --danger: #f38b86;
+  --success: #5ed6a4;
+  /* *-border tokens the badge set doesn't need but ConfirmDialog/alert
+     cards and StatTiles do */
+  --success-border: #1d5c40;
+  --danger-border: #5c2b29;
+  --warn-alert-bg: #231a12; --warn-alert-border: #5c4420;
+  --warn-accent: #f0a94e;
+}
+
+/* Numeric cells align without switching to a mono face. Counts, quantities
+   and dollars are right-aligned with tabular figures everywhere — apply
+   data-num at every numeric cell rather than aligning ad hoc. */
+td[data-num], th[data-num] { font-variant-numeric: tabular-nums; text-align: right; }
+
+html, body {
+  /* Stops the whole page from scrolling sideways when something (a wide
+     table, a long unbroken string) pushes past the viewport width. Inner
+     elements that need horizontal scroll (.table-card etc.) set their own
+     overflow-x: auto, which is unaffected by this — it only clips growth
+     of the page itself, not scrolling inside a component that opts in. */
+  overflow-x: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--text);
+  background: var(--page-bg);
+  line-height: 1.5;
 }
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Layout: app header + mobile drawer (simplified shell) ── */
+.portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--primary-dark);
+  color: var(--on-primary);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.portal-header .brand {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--on-primary);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  /* the header is only 56px tall, so keep the wordmark from wrapping */
+  white-space: nowrap;
+}
+.portal-header .brand-logo { height: 32px; width: 32px; display: block; flex-shrink: 0; }
+.portal-header nav { display: flex; gap: 24px; align-items: center; }
+.portal-header nav a { color: var(--nav-ink); font-size: var(--fs-body); transition: color 0.15s; }
+.portal-header nav a:hover { color: var(--on-primary); text-decoration: none; }
+
+/* Hamburger — hidden on desktop */
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--on-primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+/* Mobile drawer — fixed under the sticky header so it stays visible
+   regardless of how far the page has been scrolled, instead of sitting at
+   its normal-flow position and scrolling out of view with the content. */
+.nav-drawer {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+  background: var(--primary-dark);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  z-index: 99;
+}
+.nav-drawer-links {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+.nav-drawer-links a {
+  color: var(--nav-ink);
+  font-size: var(--fs-body);
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  transition: background 0.1s;
+}
+.nav-drawer-links a:last-of-type { border-bottom: none; }
+.nav-drawer-links a:hover { background: rgba(255,255,255,0.08); text-decoration: none; color: var(--on-primary); }
+.nav-drawer-links .btn { margin: 12px 24px; width: calc(100% - 48px); justify-content: center; }
+
+@media (max-width: 720px) {
+  .portal-header .nav-desktop { display: none; }
+  .nav-hamburger { display: block; }
+}
+
+.page { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+.page-wide { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 72px; /* clears the 56px sticky header when scrolled into view */
+}
+
+/* ── Tables (unified) ── */
+table { width: 100%; border-collapse: collapse; }
+
+th {
+  text-align: left;
+  padding: var(--cell-y) var(--cell-x);
+  font-size: var(--fs-table);
+  font-weight: 600;
+  background: var(--primary-dark);
+  color: var(--on-primary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+td {
+  text-align: left;
+  padding: var(--cell-y) var(--cell-x);
+  font-size: var(--fs-table);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-cell);
+}
+
+tbody tr { transition: background 0.1s; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--row-hover); }
+
+tfoot td {
+  font-weight: 700;
+  background: var(--primary-100);
+  color: var(--primary-emphasis);
+  border-top: 2px solid var(--primary-200);
+}
+
+/* Read-only label/value pairs (ExpandableRow detail panels) — generic,
+   not table-specific, since it's just a labeled-value layout. */
+.definition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--s4) var(--s5);
+  margin: 0;
+}
+.definition-grid dt {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.definition-grid dd {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--text);
+}
+
+/* Table container — used on list pages (ui/TableCard.tsx) */
+.table-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Forms ── */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+label { font-size: var(--fs-label); font-weight: 500; color: var(--neutral-fg); }
+input, select, textarea {
+  font-family: inherit;
+  font-size: var(--fs-body);
+  height: var(--ctl-h);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  outline: none;
+  width: 100%;
+  background: var(--surface-1);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ctl-h);
+  padding: 0 var(--s4);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+/* Darken on hover, not lighten — a lighter fill with white text loses
+   contrast exactly when you point at it. */
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--primary) 85%, black);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+.btn-secondary { background: var(--surface-1); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--neutral-bg); }
+.btn-danger { background: var(--danger); color: var(--on-primary); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger) 85%, black); }
+.btn-sm { height: var(--ctl-h-sm); padding: 0 var(--s3); font-size: var(--fs-label); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* A button that reads as plain text/underlined text-link, not a button —
+   for inline toggles (show archived, expand/collapse) that shouldn't look
+   like a call to action. .btn-link keeps the underline and primary color of
+   a real link; .btn-unstyled drops both for a chevron/label toggle that
+   should read as part of the surrounding text instead. */
+.btn-link, .btn-unstyled {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+}
+.btn-link { color: var(--primary); text-decoration: underline; }
+.btn-unstyled { color: inherit; }
+
+/* Keyboard-focus rings — everything interactive gets one. */
+.btn:focus-visible, .btn-link:focus-visible, .btn-unstyled:focus-visible,
+.portal-header nav a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Button component variants (ui/Button.tsx) ──
+   Full-height, transparent-background siblings of .btn-primary/-secondary/
+   -danger, for actions that don't need a border to justify themselves (a
+   row's Edit action, a "Show archived" toggle rendered as a real button
+   rather than inline text). Distinct from the plain .btn-link/.btn-unstyled
+   pair above, which stay unsized for genuine inline-text toggles. */
+.btn-ghost { background: transparent; color: var(--primary); border: 1px solid transparent; }
+.btn-ghost:hover { background: var(--primary-bg); color: var(--primary-emphasis); }
+.btn-cta-link { background: transparent; color: var(--primary); border: none; text-decoration: underline; text-underline-offset: 3px; }
+.btn-cta-link:hover { color: var(--primary-emphasis); text-decoration-thickness: 2px; }
+/* Text-only variants can't use the blanket 50% opacity above — the primary
+   ink at half opacity fails contrast. They drop to --muted at full
+   opacity instead. */
+.btn-ghost:disabled, .btn-cta-link:disabled,
+.btn-ghost[data-busy], .btn-cta-link[data-busy] {
+  opacity: 1;
+  color: var(--muted);
+}
+.btn[data-busy] { opacity: 0.65; cursor: progress; }
+
+/* ── Badges (ui/StatusBadge.tsx — four tones, capped) ── */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+.badge-pending  { background: var(--warn-bg); color: var(--warn-fg); }
+.badge-approved { background: var(--success-bg); color: var(--success-fg); }
+.badge-rejected { background: var(--danger-bg); color: var(--danger-fg); }
+.badge-neutral  { background: var(--neutral-bg); color: var(--neutral-fg); }
+
+/* ── Disclosure note (ui/DisclosureNote.tsx) — one sentence visible, the
+   rest on request: the collapsed bar carries the note's key sentence, with
+   a right-aligned affordance, so pages start at their content. ── */
+.disclosure-note {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.disclosure-note--warning {
+  background: var(--warn-alert-bg);
+  border-color: var(--warn-alert-border);
+}
+.disclosure-note summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.disclosure-note summary::-webkit-details-marker { display: none; }
+.disclosure-note-summary {
+  font-weight: 600;
+  color: var(--text-cell);
+  min-width: 0;
+}
+.disclosure-note--warning .disclosure-note-summary { color: var(--warn-fg); }
+.disclosure-note-affordance {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: var(--fs-label);
+  color: var(--primary);
+  white-space: nowrap;
+}
+.disclosure-note[open] .disclosure-note-affordance { display: none; }
+.disclosure-note-body {
+  padding: 0 16px 14px;
+  color: var(--text);
+  font-size: var(--fs-body);
+}
+.disclosure-note-body p { margin: 0 0 10px; }
+.disclosure-note-body p:last-child { margin-bottom: 0; }
+
+/* ── Alerts (also ConfirmDialog's warning boxes) ── */
+.alert { padding: 12px 16px; border-radius: var(--r-md); font-size: var(--fs-body); margin-bottom: 16px; }
+.alert-error   { background: var(--danger-bg); color: var(--danger-fg); border: 1px solid var(--danger-border); }
+.alert-success { background: var(--success-bg); color: var(--success-fg); border: 1px solid var(--success-border); }
+
+/* ── Section headings ── */
+h1 { font-size: var(--fs-h1); font-weight: 700; margin-bottom: 4px; }
+h2 { font-size: var(--fs-h2); font-weight: 600; margin-bottom: 16px; }
+.page-subtitle { color: var(--muted); margin-bottom: 32px; }
+
+/* ── Utilities ── */
+.stack   { display: flex; flex-direction: column; gap: 16px; }
+.row     { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.spacer  { flex: 1; }
+
+/* ── Filter bar (ui/FilterBar.tsx) — a single row of selects on desktop,
+   two-per-row on mobile so it never balloons to full-width stacking ── */
+.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.filter-bar select { width: auto; min-width: 140px; flex: 1 1 170px; max-width: 220px; }
+@media (max-width: 720px) {
+  .filter-bar select { flex: 1 1 45%; max-width: none; min-width: 0; }
+}
+
+/* Chip primitive (ui/Chip.tsx) — one shell, three jobs: scope
+   (single-select strip), toggle (multi-select filter), static (a
+   non-interactive labeled quantity). */
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: var(--s2) var(--s4);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+button.ui-chip { cursor: pointer; }
+.ui-chip--selected { background: var(--primary-dark); border-color: var(--primary-dark); color: var(--on-primary); }
+.ui-chip--toggle-on { background: var(--primary-bg); border-color: var(--primary-200); color: var(--primary-emphasis); }
+.ui-chip-affix { font-size: var(--fs-micro); opacity: 0.75; }
+
+.ui-chip--static-primary { background: var(--primary-bg); color: var(--primary-emphasis); border-color: transparent; font-weight: 500; padding: 3px 10px; }
+.ui-chip--static-warn    { background: var(--warn-bg); color: var(--warn-fg); border-color: transparent; font-weight: 500; padding: 3px 10px; }
+.ui-chip--static-info    { background: var(--primary-100); color: var(--primary-emphasis); border-color: transparent; font-weight: 500; padding: 3px 10px; }
+.ui-chip--static-neutral { background: var(--neutral-bg); color: var(--neutral-fg); border-color: transparent; font-weight: 500; padding: 3px 10px; }
+
+@media (max-width: 720px) {
+  .page, .page-wide { padding: 24px 12px; }
+  /* Explicit opt-in — a blanket attribute selector here would collapse
+     every inline grid on mobile, including ones never meant to stack. */
+  .stack-on-mobile { grid-template-columns: 1fr !important; }
+}
+
+/* Underline tab strip (ui/Tabs.tsx). */
+.tab-strip {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 20px;
+}
+.tab-strip-btn {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.tab-strip-btn.active {
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Route-transition spinner (app/loading.tsx, if the project adds one). */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid var(--primary-bg);
+  border-top-color: var(--primary);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── IconButton (ui/IconButton.tsx): icon-only buttons, reserved for
+   reversible repeated row actions (✎ edit). Words for consequences.
+   sm = 30px desk rows; lg = 44px mobile cards. Disabled renders greyed,
+   never hidden: on a phone the pencil teaches where editing lives. ── */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-1); color: var(--primary-emphasis);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  cursor: pointer; padding: 0; flex: 0 0 auto;
+}
+.icon-btn--sm { width: 30px; height: 30px; font-size: var(--fs-h2); }
+/* The ✎ glyph carries little ink relative to its em box, so it takes the
+   display size to read at parity with the button it sits in. */
+.icon-btn--lg { width: 44px; height: 44px; font-size: var(--fs-display); border-radius: var(--r-lg); }
+.icon-btn:hover:not(:disabled) { background: var(--row-hover); border-color: var(--border-strong); }
+.icon-btn:disabled { color: var(--muted-light); border-color: var(--border-light); cursor: default; background: var(--surface-1); }
+
+/* ── StatTile (ui/StatTile.tsx — headline-number KPI tiles) ── */
+.stat-tile {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: var(--s3) var(--s4);
+  min-width: 150px; flex: 1 1 150px;
+}
+.stat-tile-label {
+  font-size: var(--fs-micro); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted); margin-bottom: 2px;
+}
+.stat-tile-value { font-size: var(--fs-display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-tile-sub { font-size: var(--fs-label); color: var(--muted); margin-top: 2px; }
+.stat-tile--warn { background: var(--warn-alert-bg); border-color: var(--warn-alert-border); }
+.stat-tile--warn .stat-tile-value, .stat-tile--warn .stat-tile-sub { color: var(--warn-fg); }
+.stat-tile--danger { background: var(--danger-bg); border-color: var(--danger-border); }
+.stat-tile--danger .stat-tile-value, .stat-tile--danger .stat-tile-sub { color: var(--danger-fg); }
+.stat-tile--success { background: var(--success-bg); border-color: var(--success-border); }
+.stat-tile--success .stat-tile-value, .stat-tile--success .stat-tile-sub { color: var(--success-fg); }
