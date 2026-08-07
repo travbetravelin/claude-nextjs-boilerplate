@@ -13,13 +13,18 @@
 import { useEffect, useRef, useState } from 'react'
 import Button from '@/components/ui/Button'
 import Chip from '@/components/ui/Chip'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import DisclosureNote from '@/components/ui/DisclosureNote'
 import EmptyState from '@/components/ui/EmptyState'
+import ExpandableRow from '@/components/ui/ExpandableRow'
 import Field from '@/components/ui/Field'
+import FilterBar from '@/components/ui/FilterBar'
 import IconButton from '@/components/ui/IconButton'
+import NumberCell from '@/components/ui/NumberCell'
 import StatTile from '@/components/ui/StatTile'
 import StatusBadge from '@/components/ui/StatusBadge'
 import TableCard from '@/components/ui/TableCard'
+import Tabs from '@/components/ui/Tabs'
 
 // ── Tokens shown (must exist in globals.css — nothing here is invented) ──
 
@@ -150,6 +155,114 @@ function ChipDemo() {
   )
 }
 
+function ConfirmDemo() {
+  const [confirming, setConfirming] = useState(false)
+  const [archived, setArchived] = useState(false)
+  if (archived) {
+    return (
+      <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+        <StatusBadge tone="neutral">Archived</StatusBadge>
+        {/* Restore never confirms — that's the doctrine, demonstrated. */}
+        <Button variant="ghost" size="sm" onClick={() => setArchived(false)}>Restore</Button>
+      </div>
+    )
+  }
+  if (confirming) {
+    return (
+      <ConfirmDialog
+        placement="inline"
+        body="Archive the Riverside project?"
+        loadImpact={async () => 'This will hide 12 records from day-to-day lists. History stays intact.'}
+        confirmLabel="Archive"
+        onConfirm={async () => { setArchived(true); setConfirming(false) }}
+        onCancel={() => setConfirming(false)}
+      />
+    )
+  }
+  return (
+    <Button variant="danger" size="sm" onClick={() => setConfirming(true)}>Archive</Button>
+  )
+}
+
+const DEMO_ROWS = [
+  { name: 'Riverside', hours: '38.50', status: 'approved' as const, note: 'Reviewed and approved on the 3rd — nothing outstanding.' },
+  { name: 'Hilltop', hours: '12.25', status: 'pending' as const, note: 'Waiting on review. Expanding a row shows its detail without leaving the list.' },
+]
+
+function TableDemo() {
+  const [open, setOpen] = useState<string | null>('Hilltop')
+  return (
+    <TableCard>
+      <table>
+        <thead>
+          <tr><th>Project</th><th data-num>Hours</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {DEMO_ROWS.map(r => (
+            <ExpandableRow
+              key={r.name}
+              expanded={open === r.name}
+              colSpan={3}
+              cells={
+                <>
+                  <td>
+                    <button type="button" className="btn-unstyled" onClick={() => setOpen(open === r.name ? null : r.name)}>
+                      {r.name} {open === r.name ? '▾' : '▸'}
+                    </button>
+                  </td>
+                  <NumberCell>{r.hours}</NumberCell>
+                  <td><StatusBadge tone={r.status}>{r.status === 'approved' ? 'Approved' : 'Pending'}</StatusBadge></td>
+                </>
+              }
+              detail={<div style={{ fontSize: 'var(--fs-label)', color: 'var(--text-cell)' }}>{r.note}</div>}
+            />
+          ))}
+        </tbody>
+      </table>
+    </TableCard>
+  )
+}
+
+// One panel of the Desk/Field comparison: pins its own density on a wrapper
+// (custom properties inherit, so the nearest data-density wins) and prints
+// the working sizes it actually renders with.
+function DensityPanel({ mode }: { mode: 'desk' | 'field' }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [sizes, setSizes] = useState<{ ctl?: string; body?: string }>({})
+  useEffect(() => {
+    if (!ref.current) return
+    const cs = getComputedStyle(ref.current)
+    setSizes({ ctl: cs.getPropertyValue('--ctl-h').trim(), body: cs.getPropertyValue('--fs-body').trim() })
+  }, [])
+  return (
+    <div
+      ref={ref}
+      data-density={mode}
+      style={{ flex: '1 1 260px', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: 'var(--s3)', background: 'var(--surface-1)' }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: 2 }}>
+        {mode === 'desk' ? 'Desk — computer screens' : 'Field — phones & touch'}
+      </div>
+      <div style={{ fontSize: 'var(--fs-label)', color: 'var(--muted)', marginBottom: 'var(--s3)' }}>
+        {mode === 'desk'
+          ? 'Compact controls and smaller text fit more rows on an admin screen, for mouse-and-keyboard work.'
+          : 'Taller controls and bigger text make targets easy to hit with a thumb and read at arm’s length.'}
+      </div>
+      <div className="stack" style={{ gap: 'var(--s2)' }}>
+        <Field label="Sample field" style={{ marginBottom: 0 }}>
+          <input placeholder="Type here" readOnly />
+        </Field>
+        <div className="row" style={{ gap: 8 }}>
+          <Button variant="primary">Save changes</Button>
+        </div>
+      </div>
+      <div style={{ ...MONO, fontSize: 'var(--fs-micro)', color: 'var(--muted)', marginTop: 'var(--s3)' }}>
+        control height {sizes.ctl || '—'} · body text {sizes.body || '—'}
+      </div>
+    </div>
+  )
+}
+
 function ComponentCard({ name, blurb, children }: { name: string; blurb: string; children: React.ReactNode }) {
   return (
     <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: 'var(--s3)', background: 'var(--surface-1)' }}>
@@ -216,21 +329,23 @@ export default function DesignSystemGuide() {
         {/* First thing inside the preview, so the Field/Desk toggle has an
             immediately visible landing spot -- density only changes the
             working sizes, which otherwise live below the fold. */}
-        <Section title="Density in action">
-          <div className="row" style={{ gap: 'var(--s4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <Field label="Sample field" style={{ marginBottom: 0, minWidth: 200 }}>
-              <input placeholder="Type here" readOnly />
-            </Field>
-            <Button variant="primary">Save changes</Button>
-            <IconButton icon="edit" aria-label="Sample edit" size="lg" />
+        <Section title="Two densities, side by side">
+          <p style={{ marginTop: 0, marginBottom: 'var(--s3)' }}>
+            Every page in the app picks one of two <strong>densities</strong> — the same components and colors,
+            rendered at two working sizes. These two panels are identical except for that one setting:
+          </p>
+          <div className="row" style={{ gap: 'var(--s3)', flexWrap: 'wrap', alignItems: 'stretch' }}>
+            <DensityPanel mode="desk" />
+            <DensityPanel mode="field" />
           </div>
           <Caption>
-            Flip the Field preview above: controls grow from desk height to thumb height
-            (<span style={MONO}>--ctl-h {v['--ctl-h'] || '—'}</span>) and the three working text sizes step up
-            (<span style={MONO}>--fs-body {v['--fs-body'] || '—'}</span>, <span style={MONO}>--fs-table {v['--fs-table'] || '—'}</span>,{' '}
-            <span style={MONO}>--fs-label {v['--fs-label'] || '—'}</span>). Headings, colors and spacing deliberately
-            don&apos;t move — density is about tap targets and readability on a phone, not a second visual style.
-            Each page declares one density, Desk or Field, and phones get Field-sized targets regardless.
+            The difference is controls and working text only — headings, colors, and spacing deliberately don&apos;t
+            move, because density is about tap targets and readability, not a second visual style. A dense admin
+            table page declares Desk; a page used standing up with a phone declares Field. The Desk/Field toggle in
+            the Preview bar applies one of these to everything below, exactly the way a page&apos;s declaration
+            would (currently <span style={MONO}>--ctl-h {v['--ctl-h'] || '—'}</span>). And on an actual phone the
+            stylesheet forces Field-sized targets everywhere — a 30px control is a mis-tap magnet — so on a small
+            screen these two panels genuinely look the same.
           </Caption>
         </Section>
 
@@ -377,12 +492,37 @@ export default function DesignSystemGuide() {
                 docs/recipes/archiving-not-deleting.md.
               </DisclosureNote>
             </ComponentCard>
+
+            <ComponentCard name="ConfirmDialog" blurb="Every “are you sure” — inline, so the record being judged stays visible. Never a pop-up. Try it: Archive asks (with a real impact count); Restore doesn't.">
+              <ConfirmDemo />
+            </ComponentCard>
+
+            <ComponentCard name="FilterBar" blurb="The controls row above any filterable list — chips and fields sit in it, tables follow it.">
+              <FilterBar>
+                <Chip variant="toggle" selected onToggle={() => {}}>Active only</Chip>
+                <Field label="Search" style={{ marginBottom: 0, maxWidth: 180 }}>
+                  <input placeholder="Project name" readOnly />
+                </Field>
+              </FilterBar>
+            </ComponentCard>
+
+            <ComponentCard name="TableCard + NumberCell + ExpandableRow" blurb="The standard list page: a card the table lives in, right-aligned tabular numbers, and rows that unfold their detail in place. Click a project name.">
+              <TableDemo />
+            </ComponentCard>
+
+            <ComponentCard name="Tabs" blurb="Sections within a page — this whole guide runs on it. Content stays loaded when you switch, so nothing re-scrolls or refetches.">
+              <Tabs
+                tabs={[
+                  { key: 'a', label: 'Summary', content: <p style={{ margin: 0, fontSize: 'var(--fs-label)' }}>Each tab&apos;s content is prepared once and shown or hidden — switching is instant.</p> },
+                  { key: 'b', label: 'Detail', content: <p style={{ margin: 0, fontSize: 'var(--fs-label)' }}>Nothing reloads when you come back — scroll position and typed text survive the switch.</p> },
+                ]}
+              />
+            </ComponentCard>
           </div>
           <Caption>
-            One kit: every screen is assembled from these same blocks — new features reuse them, so the app stays
-            consistent as it grows, and both themes and both densities come free with the shared pieces. The full
-            registry (including ConfirmDialog, FilterBar, ExpandableRow and the rest) is COMPONENTS.md in the
-            repository.
+            One kit, shown whole: every screen is assembled from these same blocks — new features reuse them, so
+            the app stays consistent as it grows, and both themes and both densities come free with the shared
+            pieces. The registry with each component&apos;s options is COMPONENTS.md in the repository.
           </Caption>
         </Section>
 
