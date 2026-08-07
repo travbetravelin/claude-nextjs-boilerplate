@@ -32,12 +32,14 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  // Pre-auth routes: /login, and /reset — the password-recovery link's code
-  // exchange happens client-side after the page loads, so /reset must be
-  // reachable without a session or every reset link would bounce to /login.
-  const isPreAuth = path === "/login" || path === "/reset";
+  // Public routes: "/" is the landing page (it adapts to signed-in state
+  // itself); /login and /reset are pre-auth — the password-recovery link's
+  // code exchange happens client-side after the page loads, so /reset must
+  // be reachable without a session or every reset link would bounce to
+  // /login. Every other route requires a session.
+  const isPublic = path === "/" || path === "/login" || path === "/reset";
 
-  if (!user && !isPreAuth) {
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
