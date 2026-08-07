@@ -142,7 +142,7 @@ environment checklist in Section 4 before feature work.
 A static site carries none of the app machinery. In the first session, remove
 it — this is a documented, repeatable operation, not an improvisation. Delete:
 
-1. `src/lib/supabase/` and `src/middleware.ts`
+1. `src/lib/supabase/` and `src/proxy.ts`
 2. `src/app/login/` and `src/app/reset/`, `src/lib/auth.ts`, and
    `src/components/SignOutButton.tsx` (plus its usage in `src/app/page.tsx`)
 3. `supabase/` (entire directory)

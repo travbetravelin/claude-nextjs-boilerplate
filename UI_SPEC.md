@@ -69,17 +69,19 @@ expired or already been used…" with a button back to sign-in.
 
 ### Home (`/`)
 
-**Purpose:** Starter page demonstrating the design system; replace with the project's first real screen (and replace this spec entry when you do).
+**Purpose:** Public landing page (no sign-in required) with three guide tabs — Design System, Architecture, Working with Claude — for anyone requesting or making a change to the app. The header swaps its action by session state.
 
 #### Buttons
 
 | Label | Action | States | Destructive? |
 |---|---|---|---|
-| Sign out | Ends the session, returns to `/login` | default, loading ("Signing out…") | No |
+| Sign in (signed out) | Routes to `/login` | default, hover | No |
+| Sign out (signed in) | Ends the session, returns to `/login` | default, loading ("Signing out…") | No |
+| Design System / Architecture / Working with Claude | Switches the visible guide tab (no navigation; content stays mounted) | active/inactive | No |
 | Light / Dark / System | Sets the theme | selected/unselected chips | No |
 
 #### Empty State
-> "Nothing has been built yet."
+Not applicable — the guides are static content and always render.
 
 ---
 

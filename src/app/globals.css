@@ -600,6 +600,55 @@ button.ui-chip { cursor: pointer; }
   color: var(--primary);
 }
 
+/* Inline code chip -- token names, class names, file paths (the guides on
+   the landing page). Fully token-driven, so dark theme needs no extra rule. */
+.doc-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--neutral-bg);
+  color: var(--text);
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+}
+
+/* Boxes + connectors for the Architecture guide's system diagram -- plain
+   flexbox/CSS, no diagram library, so it stays token-driven (theme-aware)
+   instead of a static image. */
+.arch-diagram { display: flex; flex-direction: column; gap: 0; align-items: center; }
+.arch-box {
+  width: 100%;
+  max-width: 640px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-sm);
+  padding: var(--s4) var(--s5);
+}
+.arch-box-title { font-weight: 700; margin-bottom: 4px; }
+.arch-box-detail { color: var(--muted); font-size: var(--fs-label); }
+.arch-connector {
+  width: 2px;
+  height: 28px;
+  background: var(--border-strong);
+  position: relative;
+}
+.arch-connector::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--border-strong);
+}
+.arch-connector-label {
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  text-align: center;
+  margin: 2px 0;
+}
+
 /* Route-transition spinner (app/loading.tsx, if the project adds one). */
 .spinner {
   width: 40px;

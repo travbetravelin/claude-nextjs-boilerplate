@@ -1,40 +1,48 @@
-import Button from "@/components/ui/Button";
-import EmptyState from "@/components/ui/EmptyState";
+import Link from "next/link";
 import SignOutButton from "@/components/SignOutButton";
 import ThemeToggle from "@/components/ThemeToggle";
+import { createClient } from "@/lib/supabase/server";
+import GuidesTabs from "@/components/guides/GuidesTabs";
+import DesignSystemGuide from "@/components/guides/DesignSystemGuide";
+import ArchitectureGuide from "@/components/guides/ArchitectureGuide";
+import ClaudeWorkflowGuide from "@/components/guides/ClaudeWorkflowGuide";
 
-// Minimal starter page — replace with the project's real first screen.
-// Everything here draws from the design tokens in globals.css: no
-// hardcoded colors, sizes, or spacing anywhere in src/.
-export default function Home() {
+// Public landing page: the three in-app guides, readable without signing
+// in (middleware already treats "/" as public). The header swaps between
+// "Sign in" and SignOutButton based on the server-side session, which is
+// why this page is a server component and renders dynamically.
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
-    <main className="page">
+    <main className="page-wide">
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <h1>New Project</h1>
         <span className="spacer" />
-        <SignOutButton />
+        {user ? (
+          <SignOutButton />
+        ) : (
+          <Link href="/login" className="btn btn-primary">
+            Sign in
+          </Link>
+        )}
       </div>
       <p className="page-subtitle">
-        A blank starting point wired to the design system.
+        Reference for anyone requesting or making a change to this app — what
+        already exists, how the pieces fit together, and how to work with
+        Claude on it.
       </p>
 
-      <div className="stack">
-        <div className="card">
-          <h2>Getting started</h2>
-          <p style={{ marginBottom: "var(--s4)" }}>
-            Edit <code>src/app/page.tsx</code> to build the first screen. The
-            component kit lives in <code>src/components/ui</code>; the design
-            tokens live at the top of <code>src/app/globals.css</code>.
-          </p>
-          <Button variant="primary">Get started</Button>
-        </div>
+      <GuidesTabs
+        designSystemTab={<DesignSystemGuide />}
+        architectureTab={<ArchitectureGuide />}
+        claudeWorkflowTab={<ClaudeWorkflowGuide />}
+      />
 
-        <EmptyState
-          scope="page"
-          message="Nothing has been built yet"
-          hint="This empty state comes from the ui kit — replace this page when the first feature lands."
-        />
-
+      <div style={{ marginTop: "var(--s5)" }}>
         <ThemeToggle />
       </div>
     </main>
