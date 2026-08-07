@@ -36,6 +36,16 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_ENV: staging
 
+      # Fail with a plain-language message when the repo's deploy secrets
+      # haven't been configured yet (README step 5) — the Vercel CLI's own
+      # error for a blank --token is an unreadable stack trace.
+      - name: Check deploy secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "::error::Vercel secrets are missing (VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID). Checks passed, but the preview can't deploy until they are added — see README 'Add GitHub Actions Secrets'."
+            exit 1
+          fi
+
       # Vercel CLI prints the deployment URL to stdout (its logs go to
       # stderr), so capturing stdout alone yields the URL reliably.
       - name: Deploy to Vercel (preview)

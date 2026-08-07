@@ -36,6 +36,15 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_ENV: production
 
+      # Fail with a plain-language message when deploy secrets are missing
+      # (README step 5) rather than a raw CLI stack trace.
+      - name: Check deploy secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ] || [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+            echo "::error::Deploy secrets are missing (Vercel and/or Supabase). See README 'Add GitHub Actions Secrets' — nothing was deployed."
+            exit 1
+          fi
+
       # Staging first: a migration that fails here stops the job before
       # production is touched, so prod schema and prod deploy stay in sync.
       - name: Apply DB migrations (staging)
