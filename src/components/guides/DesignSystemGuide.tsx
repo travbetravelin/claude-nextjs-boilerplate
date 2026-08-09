@@ -11,9 +11,11 @@
 // by name. The deep technical reference stays docs/design-system.md.
 
 import { useEffect, useRef, useState } from 'react'
+import ArchiveButton from '@/components/ui/ArchiveButton'
 import Button from '@/components/ui/Button'
 import Chip from '@/components/ui/Chip'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import InfoTip from '@/components/ui/InfoTip'
 import DisclosureNote from '@/components/ui/DisclosureNote'
 import EmptyState from '@/components/ui/EmptyState'
 import ExpandableRow from '@/components/ui/ExpandableRow'
@@ -155,32 +157,42 @@ function ChipDemo() {
   )
 }
 
-function ConfirmDemo() {
-  const [confirming, setConfirming] = useState(false)
-  const [archived, setArchived] = useState(false)
-  if (archived) {
-    return (
-      <div className="row" style={{ gap: 8, alignItems: 'center' }}>
-        <StatusBadge tone="neutral">Archived</StatusBadge>
-        {/* Restore never confirms — that's the doctrine, demonstrated. */}
-        <Button variant="ghost" size="sm" onClick={() => setArchived(false)}>Restore</Button>
-      </div>
-    )
-  }
-  if (confirming) {
-    return (
-      <ConfirmDialog
-        placement="inline"
-        body="Archive the Riverside project?"
-        loadImpact={async () => 'This will hide 12 records from day-to-day lists. History stays intact.'}
-        confirmLabel="Archive"
-        onConfirm={async () => { setArchived(true); setConfirming(false) }}
-        onCancel={() => setConfirming(false)}
+function ArchiveDemo() {
+  // Real state so the full loop is walkable: Archive -> inline confirm
+  // (with a fetched impact count) -> Restore (which never asks) -> back.
+  const [active, setActive] = useState(true)
+  return (
+    <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 'var(--fs-table)', color: active ? undefined : 'var(--muted)' }}>
+        Riverside project{!active && ' (archived)'}
+      </span>
+      <span className="spacer" />
+      <ArchiveButton
+        active={active}
+        loadConfirmText={async () => 'This will hide 12 records from day-to-day lists. History stays intact.'}
+        onArchive={async () => setActive(false)}
+        onRestore={async () => setActive(true)}
       />
-    )
+    </div>
+  )
+}
+
+function ConfirmDialogDemo() {
+  const [open, setOpen] = useState(true)
+  if (!open) {
+    return <Button size="sm" onClick={() => setOpen(true)}>Show the confirmation card again</Button>
   }
   return (
-    <Button variant="danger" size="sm" onClick={() => setConfirming(true)}>Archive</Button>
+    <ConfirmDialog
+      placement="card"
+      tone="neutral"
+      title="Publish this report?"
+      body="Everyone with access sees the new version immediately."
+      warnings={[{ severity: 'advisory', content: '2 sections are still marked draft — they publish as-is.' }]}
+      confirmLabel="Publish"
+      onConfirm={async () => setOpen(false)}
+      onCancel={() => setOpen(false)}
+    />
   )
 }
 
@@ -493,8 +505,19 @@ export default function DesignSystemGuide() {
               </DisclosureNote>
             </ComponentCard>
 
-            <ComponentCard name="ConfirmDialog" blurb="Every “are you sure” — inline, so the record being judged stays visible. Never a pop-up. Try it: Archive asks (with a real impact count); Restore doesn't.">
-              <ConfirmDemo />
+            <ComponentCard name="ArchiveButton" blurb="The confirm-then-archive control on every managed list. The trigger renders plain — red waits for the confirm step. Try the loop: Archive asks with a real count; Restore never asks.">
+              <ArchiveDemo />
+            </ComponentCard>
+
+            <ComponentCard name="ConfirmDialog" blurb="Every “are you sure” — in place, never a pop-up, so the record being judged stays visible. The card's left rule follows tone: red only when destructive.">
+              <ConfirmDialogDemo />
+            </ComponentCard>
+
+            <ComponentCard name="InfoTip" blurb="The “why is this?” hint icon next to a label or column. Tap or hover — the panel escapes even scrolling tables.">
+              <div className="row" style={{ gap: 4, alignItems: 'center' }}>
+                <span style={{ fontSize: 'var(--fs-table)' }}>Effective rate</span>
+                <InfoTip text="Explains a rule where it applies — why a column exists, where a number comes from — without leaving the page." />
+              </div>
             </ComponentCard>
 
             <ComponentCard name="FilterBar" blurb="The controls row above any filterable list — chips and fields sit in it, tables follow it.">
@@ -529,6 +552,7 @@ export default function DesignSystemGuide() {
         <Section title="Rules this page shows by example">
           <ul style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <li>Status tones are for review state only — a config flag that&apos;s off is never &ldquo;rejected.&rdquo;</li>
+            <li><strong>Red is reserved for errors and critical conditions.</strong> Routine-but-consequential actions (Archive, Deactivate) get plain or primary buttons — red appears at the confirmation step, on blocking warnings, and on genuinely critical numbers.</li>
             <li>Pencil = reversible, repeated edit; words = consequences — Archive, Approve, Deactivate are never icons.</li>
             <li>Archive never deletes and always confirms, with real counts where history is at stake; restore never asks.</li>
             <li>Numbers are tabular and right-aligned — every count, quantity, and dollars column.</li>

@@ -50,7 +50,13 @@ All styling comes from classes/tokens in `src/app/globals.css` — see
 - **File:** `src/components/ui/ConfirmDialog.tsx`
 - **Purpose:** Every "are you sure" flow.
 - **Props:** `placement: 'inline' | 'card'`, `tone?: 'destructive' | 'neutral'`, `body?`, `warnings?` (blocking vs advisory), `loadImpact?: () => Promise<string>` (fetches a real impact count at confirm time), `confirmLabel`, `blockedReason?`, `extra?`, `onConfirm`, `onCancel`.
-- **Notes:** Never a modal — the record being judged stays visible. `inline` replaces a row's own actions; `card` is full-width for wider warning content.
+- **Notes:** Never a modal — the record being judged stays visible. `inline` replaces a row's own actions; `card` is full-width for wider warning content, with a left rule that follows `tone` (danger for destructive, primary for neutral). **Red is reserved for errors and critical conditions:** trigger buttons for routine-but-consequential actions render plain or primary — red appears at the confirm step, on blocking warnings, and on errors.
+
+### ArchiveButton
+- **File:** `src/components/ui/ArchiveButton.tsx`
+- **Purpose:** Any archive/restore toggle — the archiving doctrine as a control.
+- **Props:** `active`, `onArchive`, `onRestore`, `archiveLabel?`, `restoreLabel?`, `confirmText?`, `loadConfirmText?: () => Promise<string>` (impact-aware confirmations that fetch a real count at confirm time).
+- **Notes:** Archive always confirms in place; restore never does (see `docs/recipes/archiving-not-deleting.md`). The trigger is a plain secondary button per the red-is-reserved rule.
 
 ### EmptyState
 - **File:** `src/components/ui/EmptyState.tsx`
@@ -72,7 +78,14 @@ All styling comes from classes/tokens in `src/app/globals.css` — see
 ### TableCard
 - **File:** `src/components/ui/TableCard.tsx`
 - **Purpose:** The card wrapping a `<table>` on a list page (wraps `.table-card`, provides horizontal scroll).
-- **Props:** `children`, `style?`.
+- **Props:** `children`, `style?`, `stickyHeader?` (default `true`).
+- **Notes:** **Sticky header by default:** the card caps at 70vh and owns vertical scroll, so the header row pins while rows scroll under it. Tables shorter than the cap look unchanged. Pass `stickyHeader={false}` only where internal scroll is genuinely wrong.
+
+### InfoTip
+- **File:** `src/components/ui/InfoTip.tsx`
+- **Purpose:** A "why is this?" hint icon whose tooltip panel works on hover, focus, and tap.
+- **Props:** `text`.
+- **Notes:** Portal-rendered with `position: fixed`, so it escapes any ancestor's `overflow-x: auto` (most tips live inside a `TableCard`).
 
 ### NumberCell
 - **File:** `src/components/ui/NumberCell.tsx`

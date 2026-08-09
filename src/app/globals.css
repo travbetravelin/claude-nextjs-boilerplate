@@ -364,6 +364,85 @@ tfoot td {
   box-shadow: var(--shadow-sm);
 }
 
+/* Sticky-by-default headers (ui/TableCard.tsx): the card caps its height
+   and owns vertical scroll so thead can pin to it — sticky only engages
+   against the nearest scrolling ancestor, which .table-card's overflow-x
+   already made this box rather than the page. Tables shorter than the cap
+   never scroll internally and look exactly as before. th cells already
+   carry their own opaque background (--primary-dark), so rows scrolling
+   underneath can't show through. */
+.table-card--sticky { max-height: 70vh; overflow: auto; }
+.table-card--sticky thead th { position: sticky; top: 0; z-index: 2; }
+
+/* "Why is this?" hint icon (ui/InfoTip.tsx). The panel is portal-rendered
+   with position: fixed so it escapes any ancestor's overflow-x: auto. */
+.info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid var(--primary-200);
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary-emphasis);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.info-tip:hover,
+.info-tip[aria-expanded='true'] {
+  background: var(--primary-100);
+  border-color: var(--primary-light);
+}
+.info-tip:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.info-tip-panel {
+  position: fixed;
+  z-index: 1000;
+  max-width: 340px;
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  background: var(--primary-dark);
+  color: var(--on-primary);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  animation: info-tip-in 0.12s ease-out;
+}
+/* Small arrow, drawn as a rotated square tucked under the panel edge. */
+.info-tip-panel::after {
+  content: '';
+  position: absolute;
+  left: var(--info-tip-arrow, 50%);
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--primary-dark);
+  transform: rotate(45deg);
+  top: -4px;
+}
+.info-tip-panel-above::after {
+  top: auto;
+  bottom: -4px;
+}
+
+@keyframes info-tip-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Forms ── */
 .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 label { font-size: var(--fs-label); font-weight: 500; color: var(--neutral-fg); }

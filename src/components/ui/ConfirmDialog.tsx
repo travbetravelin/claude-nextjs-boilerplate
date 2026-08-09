@@ -117,7 +117,10 @@ export default function ConfirmDialog({
   }
 
   return (
-    <div className="card" style={{ borderLeft: '4px solid var(--danger)' }}>
+    // The left rule follows tone: danger for destructive confirms, primary
+    // for affirmative-but-deliberate ones -- red is reserved for errors and
+    // critical conditions.
+    <div className="card" style={{ borderLeft: `4px solid ${tone === 'destructive' ? 'var(--danger)' : 'var(--primary)'}` }}>
       {title && <h3 style={{ marginTop: 0 }}>{title}</h3>}
       {body && <p style={{ marginTop: 0 }}>{body}</p>}
       {checking && <p style={{ color: 'var(--muted)' }}>Checking…</p>}

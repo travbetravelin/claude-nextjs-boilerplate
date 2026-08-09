@@ -51,7 +51,7 @@ All defined in `globals.css`'s `:root` block, remapped under
 | Environment | `--staging-header-bg` | Staging banner/badge color — deliberately far from the brand ramp so staging is unmistakable. |
 | Neutrals | `--text`, `--text-cell`, `--muted`, `--muted-light`, `--border`, `--border-light`, `--border-strong` | `--muted-light` is for "(optional)" hints. `--border-strong` is for structural table rules and empty-cell "—" placeholders (`EmptyState scope="cell"`). |
 | Surfaces | `--page-bg`, `--surface-0/1/2`, `--row-hover` | `--surface-1` is the standard card/input background (`white` in light mode) — use it instead of the literal `white`, or dark theme will leave a bright white patch. `--surface-2` is one step up (zebra stripes, hover). |
-| Status | `--danger(-bg/-fg/-border)`, `--success(-bg/-fg/-border)`, `--warn-bg/-fg`, `--warn-alert-bg/-border`, `--warn-accent`, `--neutral-bg/-fg` | The `-bg/-fg` pairs back `StatusBadge` and `.alert-*`. `--warn-alert-*` is the wider advisory-paragraph shade (ConfirmDialog cards), distinct from the compact badge amber. `--warn-accent` is standalone accent text, never paired with a background. |
+| Status | `--danger(-bg/-fg/-border)`, `--success(-bg/-fg/-border)`, `--warn-bg/-fg`, `--warn-alert-bg/-border`, `--warn-accent`, `--neutral-bg/-fg` | The `-bg/-fg` pairs back `StatusBadge` and `.alert-*`. `--warn-alert-*` is the wider advisory-paragraph shade (ConfirmDialog cards), distinct from the compact badge amber. `--warn-accent` is standalone accent text, never paired with a background. **Red is reserved for errors and critical conditions**: trigger buttons for consequential-but-routine actions (Archive, Deactivate) render plain or primary — red appears at the confirmation step, on blocking warnings, on error states, and on genuinely critical numbers. A Reject that pairs with an Approve keeps red as its negative. Incomplete-setup attention states use the warn ramp, not danger. |
 
 **Adding a new color token:** add it to `:root` *and* its
 `[data-theme="dark"]` counterpart in the same change — a token with no dark
@@ -139,8 +139,13 @@ impact count where possible); restore never does. Full doctrine:
 - [ ] The page declares `data-density="field"` or uses the Desk default —
       not a bespoke set of sizes.
 - [ ] Numeric cells carry `data-num` (or use `NumberCell`).
-- [ ] Any destructive action goes through `ConfirmDialog`, not a bare
-      `confirm()` or an immediate mutation.
+- [ ] Any destructive action goes through `ConfirmDialog` (or
+      `ArchiveButton` for archive/restore), not a bare `confirm()` or an
+      immediate mutation.
+- [ ] No red trigger buttons for routine actions — red belongs to the
+      confirm step, blocking warnings, and errors.
+- [ ] Tables use `TableCard` and get sticky headers for free — opt out with
+      `stickyHeader={false}` only where internal scroll is genuinely wrong.
 - [ ] If you added a new color token, it has both a `:root` value and a
       `[data-theme="dark"]` override in the same change.
 
@@ -151,7 +156,8 @@ impact count where possible); restore never does. Full doctrine:
 | A new `.css`/`.module.css` file, or a Tailwind class | Add rules to `globals.css`, using existing tokens |
 | `background: 'white'` / `color: '#374151'` inline | `var(--surface-1)` / `var(--text-cell)` |
 | A bespoke status pill with its own colors | `StatusBadge` with the closest of the four tones |
-| `window.confirm(...)` before a destructive action | `ConfirmDialog` |
+| `window.confirm(...)` before a destructive action | `ConfirmDialog` (or `ArchiveButton` for archive/restore) |
+| A red Archive/Deactivate trigger button | Plain/secondary trigger — red appears at the confirm step |
 | Conditional unmount to switch tabs | `display: none` toggling on pre-rendered content (`Tabs`) |
 | A hand-picked control height / font size for a "denser" page | The Desk default, or `data-density="field"` |
 | `color: var(--primary-dark)` for text on a tinted background | `color: var(--primary-emphasis)` |
